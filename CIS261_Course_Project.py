@@ -1,6 +1,20 @@
+import os
+import json
+
 ACTIVE_EMPLOYEE = ""
 data = dict()
 
+
+def load():
+	if not os.path.isfile("data.json"):
+		return
+	global data
+	with open("data.json", "r") as fl:
+		data = json.load(fl)
+
+def save():
+	with open("data.json", "w") as fl:
+		json.dump(data, fl)
 
 def employee_name(name: str):
 	print(f"Now entering data for {name}")
@@ -80,11 +94,35 @@ def display(conclusion = False):
 	net_pay = (1.0 - tax) * gross_pay
 
 	print("\n".join(
-			f"{k}: {v}" for k, v in {
+			f"\t{k}: {v}" for k, v in {
 					"Gross pay": gross_pay,
 					"Net pay":   net_pay
 			}.items()
 	))
+
+def compare_dates(source: str, target: str):
+	s_month, s_day, s_year = [int(x) for x in source.split("/")]
+	t_month, t_day, t_year = [int(x) for x in target.split("/")]
+	if t_year > s_year:
+		return True
+	if t_month > s_month:
+		return True
+	if t_day >= s_day:
+		return True
+	return False
+
+
+def display_range():
+	s_date = input("Enter from-date mm/dd/yyyy or 'All':\t").lower().replace(" ", "")
+	if s_date == "all":
+		s_date = "0/0/0"
+
+	global ACTIVE_EMPLOYEE
+	for k, v in data.items():
+		if "start date" not in v or not compare_dates(s_date, v["start date"]):
+			continue
+		ACTIVE_EMPLOYEE = k
+		display()
 
 
 def count():
@@ -130,6 +168,7 @@ def date_to(month_str: str, day_str: str, year_str: str):
 
 
 def main():
+	load()
 	functions = {
 			"name":       [1, employee_name],
 			"hours":      [1, total_hours],
@@ -150,6 +189,8 @@ def main():
 			value = value[0].lower()
 		if value == "end":
 			display(True)
+			display_range()
+			save()
 			break
 		elif value not in functions:
 			print("INVALID COMMAND!")
